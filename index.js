@@ -32,18 +32,49 @@ async function run() {
         await client.connect();
 
         const movieCollection = client.db('movieDB').collection('movie')
-        const favouriteMovie=client.db('favMovie').collection('fmovie')
+        const favouriteMovie = client.db('favMovie').collection('fmovie')
 
-        app.get('/movie',async(req,res)=>{
-            const cursor =movieCollection.find();
-            const result =await cursor.toArray()
+        app.get('/movie', async (req, res) => {
+            const cursor = movieCollection.find();
+            const result = await cursor.toArray()
             res.send(result);
         })
-        app.get('/movie/:id',async(req,res)=>{
-            const id=req.params.id;
-            const query ={_id: new ObjectId(id)}
+        app.get('/movie/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
             const result = await movieCollection.findOne(query);
             res.send(result)
+        })
+        app.put('/movie/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true };
+            const updatedMovie = req.body
+            const movie = {
+                $set: {
+                    poster: updatedMovie.poster,
+                    title: updatedMovie.title,
+                    genre: updatedMovie.genre,
+                    releaseYear: updatedMovie.releaseYear,
+                    duration: updatedMovie.duration,
+                    rating: updatedMovie.rating,
+                    summary: updatedMovie.summary
+                }
+            }
+            const result = await movieCollection.updateOne(filter, movie, options)
+            res.send(result);
+        })
+        app.delete('/movie/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await movieCollection.deleteOne(query);
+            res.send(result);
+        })
+        app.delete('/favmovie/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await favouriteMovie.deleteOne(query);
+            res.send(result);
         })
 
         app.post('/movie', async (req, res) => {
