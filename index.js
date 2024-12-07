@@ -31,7 +31,12 @@ async function run() {
         const favouriteMovie = client.db('favMovie').collection('fmovie')
 
         app.get('/movie', async (req, res) => {
-            const cursor = movieCollection.find();
+            const cursor = movieCollection.find(optionn);
+            const { searchParams } = req.query
+            let option = {}
+            if (searchParams) {
+                option = { title: { $regex: searchParams, $options: "i" } }
+            }
             const result = await cursor.toArray()
             res.send(result);
         })
