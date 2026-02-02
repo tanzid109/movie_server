@@ -5,13 +5,19 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 //middleware
-app.use(cors())
+app.use(cors({
+    origin: [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        // 'https://your-production-domain.com' // Replace with your actual deployed frontend URL
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
-
-
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@movieportal.agm7k.mongodb.net/?retryWrites=true&w=majority&appName=MoviePortal`;
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@tanzidserver.zju3s7k.mongodb.net/?appName=tanzidServer`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -31,21 +37,25 @@ async function run() {
         const favouriteMovie = client.db('favMovie').collection('fmovie')
 
         app.get('/movie', async (req, res) => {
-            let option = {}
-            const cursor = movieCollection.find();
-            const { searchParams } = req.query
+            const { searchParams } = req.query;
+            let query = {};
+
             if (searchParams) {
-                option = { title: { $regex: searchParams, $options: "i" } }
+                query = { title: { $regex: searchParams, $options: "i" } };
             }
-            const result = await cursor.toArray()
+
+            const cursor = movieCollection.find(query);
+            const result = await cursor.toArray();
             res.send(result);
         })
+
         app.get('/movie/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await movieCollection.findOne(query);
             res.send(result)
         })
+
         app.put('/movie/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) }
@@ -65,12 +75,14 @@ async function run() {
             const result = await movieCollection.updateOne(filter, movie, options)
             res.send(result);
         })
+
         app.delete('/movie/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await movieCollection.deleteOne(query);
             res.send(result);
         })
+
         app.delete('/favmovie/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
@@ -84,12 +96,14 @@ async function run() {
             const result = await movieCollection.insertOne(newMovie);
             res.send(result);
         })
+
         app.post('/favmovie', async (req, res) => {
             const favMovie = req.body;
             console.log(favMovie);
             const result = await favouriteMovie.insertOne(favMovie);
             res.send(result);
         })
+
         app.get('/favmovie', async (req, res) => {
             const cursor = favouriteMovie.find();
             const result = await cursor.toArray()
@@ -104,8 +118,6 @@ async function run() {
     }
 }
 run().catch(console.dir);
-
-
 
 app.get('/', (req, res) => {
     res.send('Movie server is running')
